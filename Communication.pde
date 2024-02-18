@@ -1,10 +1,10 @@
 /**
  **********************************************************************************************************************
- * @file       Maze.pde
+ * @file       Communication.pde
  * @author     Ghazaleh Shahin
  * @version    V1.0.0
- * @date       04-February-2023
- * @brief      Maze game - Lab 2 - CPSC 543 adapted from the source code available on the instructions
+ * @date       16-February-2023
+ * @brief      Words Communication - Lab 3 - CPSC 543 adapted from the source code available on the instructions
  **********************************************************************************************************************
  * @attention
  *
@@ -18,6 +18,8 @@
 import processing.serial.*;
 import static java.util.concurrent.TimeUnit.*;
 import java.util.concurrent.*;
+import java.util.*;
+import java.util.Random;
 /* end library imports *************************************************************************************************/  
 
 
@@ -80,26 +82,77 @@ HVirtualCoupling  s;
 PImage          backgroundImage;
 int             bgWidth                             =1000;
 int             bgHeight                            =1000;
+int             k                                   =0;
+FBody             wall;
 
-/* define maze blocks */
-//int             wallCount                           = 34;
-//FBox[]          wall                                = new FBox[wallCount];
+/* define sticky blocks */
 Barrier         barrier                             = new Barrier();
+List<FBody>      walls                              =new ArrayList<FBody>();
 
-/* define start and stop button */
-FCircle           c1;
-FCircle           c2;
-
-/* define game ball */
-//FCircle           g2;
-//FBox              g1;
-
-/* define game start */
-boolean           gameStart                           = false;
-boolean           gameEnd                             = false;
-
+int[][] wallLocations = {
+  {1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1}, 
+  {1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+  {1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+  {1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+  {1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+  {1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+  {1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+  {1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+  {1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1}, 
+  {1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+  {1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+  {1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+  {1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+  {1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+  {1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+  {1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+  {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
+  };
+  
+int[][] wallLocations2 = {
+  {1,1,1,9,9,9,9,9,9,9,9,9,9,9,1,1,1}, 
+  {1,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,1},
+  {1,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,1},
+  {1,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,1},
+  {1,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,1},
+  {1,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,1},
+  {1,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,1},
+  {1,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,1},
+  {1,2,9,2,9,2,9,2,9,2,9,2,9,2,9,2,1},
+  {1,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,1},
+  {1,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,1},
+  {1,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,1},
+  {1,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,1},
+  {1,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,1},
+  {1,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,1},
+  {1,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,1},
+  {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
+  };
+  
+int[][] wallLocations3 = {
+  {1,1,9,9,9,9,9,9,9,9,9,9,9,9,9,1,1},
+  {1,1,9,9,9,9,9,9,9,9,9,9,9,9,9,1,1},
+  {1,1,9,9,9,9,9,9,9,9,9,9,9,9,9,1,1},
+  {1,1,9,9,9,9,9,9,9,9,9,9,9,9,9,1,1}, 
+  {1,1,9,9,9,9,9,9,9,9,9,9,9,9,9,1,1},
+  {1,1,9,9,9,9,9,9,9,9,9,9,9,9,9,1,1},
+  {1,1,9,9,9,9,9,9,9,9,9,9,9,9,9,1,1},
+  {1,1,9,9,9,9,9,9,9,9,9,9,9,9,9,1,1}, 
+  {1,1,3,9,3,9,3,9,3,9,3,9,3,9,3,1,1},
+  {1,1,9,9,9,9,9,9,9,9,9,9,9,9,9,1,1},
+  {1,1,9,9,9,9,9,9,9,9,9,9,9,9,9,1,1}, 
+  {1,1,9,9,9,9,9,9,9,9,9,9,9,9,9,1,1},
+  {1,1,9,9,9,9,9,9,9,9,9,9,9,9,9,1,1},
+  {1,1,9,9,9,9,9,9,9,9,9,9,9,9,9,1,1},
+  {1,1,9,9,9,9,9,9,9,9,9,9,9,9,9,1,1}, 
+  {1,1,9,9,9,9,9,9,9,9,9,9,9,9,9,1,1},
+  {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
+  };
+  
 /* text font */
 PFont             f;
+
+
 
 /* end elements definition *********************************************************************************************/  
 
@@ -149,32 +202,17 @@ void setup(){
   hAPI_Fisica.setScale(pixelsPerCentimeter); 
   world               = new FWorld();
   
-  /*Set background to the world*/
-  backgroundImage = loadImage("img/maze2.jpg"); 
+  /* Set sticky barriers */
+  walls = addWalls(wallLocations);
+  k = 1;
   
-  /* Set maze barriers */
-  barrier.add(world);
-  
-  ///* Start Button */
-  c1                  = new FCircle(2.0); // diameter is 2
-  c1.setPosition(edgeTopLeftX+2.5, edgeTopLeftY+worldHeight/2.0);
-  c1.setFill(0, 255, 0);
-  c1.setStaticBody(true);
-  world.add(c1);
-  
-  /* Finish Button */
-  c2                  = new FCircle(2.0);
-  c2.setPosition(worldWidth-2.5, edgeTopLeftY+worldHeight/2.0);
-  c2.setFill(200,0,0);
-  c2.setStaticBody(true);
-  c2.setSensor(true);
-  world.add(c2);
-  
-  /* Setup the Virtual Coupling Contact Rendering Technique */
+  System.out.println(walls);
+  //  /* Setup the Virtual Coupling Contact Rendering Technique */
   s                   = new HVirtualCoupling((0.75)); 
   s.h_avatar.setDensity(4); 
-  s.h_avatar.setFill(255,0,0); 
-  s.h_avatar.setSensor(true);
+  s.h_avatar.setFill(255,255,255,0); 
+  s.h_avatar.setNoStroke();
+  s.h_avatar.setSensor(false);
 
   s.init(world, edgeTopLeftX+worldWidth/2, edgeTopLeftY+2); 
   
@@ -199,28 +237,15 @@ void setup(){
 
 /* draw section ********************************************************************************************************/
 void draw(){
-  /* put graphical code here, runs repeatedly at defined framerate in setup, else default at 60fps: */
-  if(gameEnd){
-    background(0, 100, 0, 0.5);
-    textFont(f, 30);
+   if (renderingForce == false) {
+    background(255);
+    world.draw();
+
     textAlign(CENTER);
-    text("You Won!", width/2, height/2);
-  }
-  else{
-    if(renderingForce == false){
-    image(backgroundImage, 0, 0, 1000, 1000);
-    textFont(f, 22);
- 
-    if(gameStart){
-      barrier.showWalls();
-    }
-    else{
-      //fill(128);
-      textAlign(CENTER);
-      text("Touch the green circle to start the maze", width/2, 60);
-  }
-  world.draw();
-    }
+    text("Press keys 1, 2, or 3 to change mode.", width/2, 60);
+    textAlign(CENTER);
+    text("Before changing modes, return to callibration point to make sure you start in the same position.", width/2, 90);
+    textAlign(LEFT);
   }
 }
 /* end draw section ****************************************************************************************************/
@@ -251,20 +276,27 @@ class SimulationThread implements Runnable{
     fEE.set(-s.getVirtualCouplingForceX(), s.getVirtualCouplingForceY());
     fEE.div(100000); //dynes to newtons
     
+    
     torques.set(widgetOne.set_device_torques(fEE.array()));
     widgetOne.device_write_torques();
     
-    if (s.h_avatar.isTouchingBody(c1)){
-      gameStart = true;
-      gameEnd = false;
-      s.h_avatar.setSensor(false);
+    for (int i = 0; i < walls.size(); ++i)
+    {
+      if (s.h_avatar.isTouchingBody(walls.get(i)) && walls.get(i).getName().equals("sticky")){
+        s.h_avatar.setDamping(900);
+        break;
+      } 
+      //else if (s.h_avatar.isTouchingBody(walls.get(i)) && walls.get(i).getName().equals("bouncy")){
+      //  float vy = s.getAvatarVelocityY();
+      //  s.setAvatarVelocity(-vy * 0.09, 0);   
+      //}
+      else {
+        s.h_avatar.setDamping(4);
+      }   
     }
-  
-    if(s.h_avatar.isTouchingBody(c2) || s.h_avatar.isTouchingBody(c2)){
-      gameEnd = true;
-      gameStart = false;
-      s.h_avatar.setSensor(true);
-    }
+
+    
+    
     world.step(1.0f/1000.0f);
   
     renderingForce = false;
@@ -276,42 +308,132 @@ class SimulationThread implements Runnable{
 
 /* helper functions section, place helper functions here ***************************************************************/
 
-/* Alternate bouyancy of fluid on avatar and gameball helper functions, comment out
- * "Bouyancy of fluid on avatar and gameball section" in simulation and uncomment 
- * the helper functions below to test
- */
- 
-/*
-void contactPersisted(FContact contact){
-  float size;
-  float b_s;
-  float bm_d;
-  
-  if(contact.contains("Water", "Widget")){
-    size = 2*sqrt(contact.getBody2().getMass()/contact.getBody2().getDensity()/3.1415);
-    bm_d = contact.getBody2().getY()-contact.getBody1().getY()+l1.getHeight()/2;
-    
-    if(bm_d + size/2 >= size){
-      b_s = size;
+List<FBody> addWalls (int [][] walls){
+  List<FBody> wallsList  = new ArrayList<FBody>();
+  FBody wall;
+  float x = 0;
+  float y = 0;
+  int side = walls.length / 2;
+  for(int i = 0; i < walls.length; ++i) {
+    if(i <= side){
+      y = edgeTopLeftY + worldHeight/2.0 - (side - i);
     }
     else{
-      b_s = bm_d + size/2;
+      y = edgeTopLeftY + worldHeight/2.0 + (i - side); 
     }
-    
-    contact.getBody2().addForce(0, contact.getBody1().getDensity()*sq(b_s)*300*-1);
-    contact.getBody2().setDamping(20);
+      for(int j = 0; j < walls[i].length; ++j) {
+        if(j <= side){
+          x = edgeTopLeftX + worldWidth/2.0 - (side - j);
+        }
+        else{
+          x = edgeTopLeftX + worldWidth/2.0 + (j - side); 
+        }
+        
+        if(walls[i][j] == 1){
+          wall = barrier.createWall(1.0 ,1.0 ,x, y, 10, 10, 10, 0, 0, 0);
+          wallsList.add(wall);            
+        }
+        else if(walls[i][j] == 2){
+          wall = barrier.createBouncy(3.0, x, y, 50, 50, 50, 0, 0);
+          wallsList.add(wall);
+        }
+        else if(walls[i][j] == 0){
+          wall = barrier.createSticky(1.0, 1.0, x, y, 100, 100 ,100, 0, 800, 0);
+          wallsList.add(wall);             
+        }
+        else if (walls[i][j] == 3){
+          wall = barrier.createWall(3.0, 3.0, x, y, 200, 200, 200, 0, 0, 150);
+          wallsList.add(wall);
+        } 
+        //else {
+        //  wall = barrier.createWall(0, 0, x, y, 0, 0, 0, 0, 0, 0);
+        //  wallsList.add(wall);
+        //}
+        //world.add(wall);
+       }
   }
+  //world.draw();
+  return wallsList;
+}
+
+//void clearWalls(List<FBody> walls){
+// ArrayList<FBody> bodies = world.getBodies();
+//   for (FBody w : walls) {   
+//    for (FBody b : bodies) {
+//      try{
+//        if (b.getName() != null && b.getName().equals(w.getName())) world.remove(b);
+//            System.out.println("cleared"); 
+
+//      } catch (Exception e) {
+//    System.out.println(e.getMessage()); 
+//}
+//    }
+//   }
+//}
+
+/* keyboard inputs ********************************************************************************************************/
+void keyPressed() {
+  System.out.println("keyPressed");
   
-}
-
-
-void contactEnded(FContact contact){
-  if(contact.contains("Water", "Widget")){
-    contact.getBody2().setDamping(0);
+  /*reset*/
+  if (key == '1') { //<>//
+    if (k == 1){
+      System.out.println("You are in the first world");
+      return;
+    } else if (k == 2){
+      removeBodyByName ("wall");
+      removeBodyByName ("bouncy");
+    } else {
+      removeBodyByName ("wall");
+    }
+    k = 1;
+    walls.removeAll(walls);
+    walls = addWalls(wallLocations);
+  }
+  if (key == '2') {
+    if (k == 2){
+      System.out.println("You are in the second world");
+      return;
+    } else if (k == 1){
+      removeBodyByName ("wall");
+      removeBodyByName ("sticky");
+    } else {
+      removeBodyByName ("wall");
+    }
+    k = 2;
+    walls.removeAll(walls);
+    walls = addWalls(wallLocations2);
+  }
+  if (key == '3'){
+    if (k == 3){
+      System.out.println("You are in the third world");
+      return;
+    } else if (k == 1){
+      removeBodyByName ("wall");
+      removeBodyByName ("sticky");
+    } else {
+      removeBodyByName ("wall");
+      removeBodyByName ("bouncy");
+    }
+    k = 3;
+    walls.removeAll(walls);
+    walls = addWalls(wallLocations3);  
   }
 }
-*/
 
-/* End Alternate Bouyancy of fluid on avatar and gameball helper functions */
+void removeBodyByName(String bodyName) {
+  ArrayList<FBody> bodies = world.getBodies();
+  for (FBody b : bodies) {
+    try {
+      if (b.getName().equals(bodyName)) {
+        world.remove(b);
+      }
+    } 
+    catch(NullPointerException e) {
+      // do nothing
+    }
+  }
+}
+
 
 /* end helper functions section ****************************************************************************************/
